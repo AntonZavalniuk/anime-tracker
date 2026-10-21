@@ -1,0 +1,9 @@
+allowBuilds:
+  "@prisma/engines": true
+  esbuild: true
+  prisma: true
+  sharp: false
+  unrs-resolver: false
+  workerd: true
+minimumReleaseAgeExclude:
+  - prisma@8.0.0-rc.24

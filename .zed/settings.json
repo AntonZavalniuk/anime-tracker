@@ -1,0 +1,33 @@
+{
+  "languages": {
+    "JSON": {
+      "language_servers": ["!json-language-server", "..."]
+    },
+    "YAML": {
+      "language_servers": ["!yaml-language-server", "..."]
+    }
+  },
+  "lsp": {
+    "json-language-server": {
+      "initialization_options": {
+        "provideFormatter": true
+      },
+      "settings": {
+        "json": {
+          "schemaDownload": {
+            "enable": false
+          }
+        }
+      }
+    },
+    "yaml-language-server": {
+      "settings": {
+        "yaml": {
+          "schemaStore": {
+            "enable": false
+          }
+        }
+      }
+    }
+  }
+}

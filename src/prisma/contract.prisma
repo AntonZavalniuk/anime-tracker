@@ -1,0 +1,60 @@
+// use prisma-8
+// Contract inferred from the live database schema. Edit as needed, then run `prisma contract emit`.
+
+namespace public {
+  model User {
+    id            String          @id(map: "User_pkey")
+    email         String
+    username      String
+    passwordHash  String
+    createdAt     Timestamp(3)    @default(now())
+    updatedAt     Timestamp(3)
+    anime         Anime[]
+    tableSettings TableSettings[]
+
+    @@index([email], map: "User_email_idx")
+    @@index([email], map: "User_email_key", unique: true)
+    @@index([username], map: "User_username_key", unique: true)
+  }
+
+  model Anime {
+    id            String               @id(map: "Anime_pkey")
+    title         String
+    originalTitle String?
+    season        Float
+    episode       Int
+    episodes      Int
+    status        pg.enum(AnimeStatus)
+    createdAt     Timestamp(3)         @default(now())
+    updatedAt     Timestamp(3)
+    userId        String
+    posterUrl     String?
+    user          User                 @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "Anime_userId_fkey")
+
+    @@index([title], map: "Anime_title_idx")
+    @@index([title], map: "Anime_title_key", unique: true)
+    @@index([userId], map: "Anime_userId_idx")
+  }
+
+  model TableSettings {
+    id                String            @id(map: "TableSettings_pkey")
+    showOriginalTitle Boolean           @default(true)
+    updatedAt         Timestamp(3)
+    userId            String
+    viewMode          pg.enum(ViewMode) @default("TABLE")
+    user              User              @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "TableSettings_userId_fkey")
+
+    @@index([userId], map: "TableSettings_userId_idx")
+  }
+
+  native_enum AnimeStatus {
+    AIRING = "AIRING"
+    COMPLETED = "COMPLETED"
+    UPCOMING = "UPCOMING"
+  }
+
+  native_enum ViewMode {
+    TABLE = "TABLE"
+    GRID = "GRID"
+  }
+}
