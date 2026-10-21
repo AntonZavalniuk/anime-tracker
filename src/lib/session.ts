@@ -4,10 +4,10 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE, SESSION_DURATION_MS } from "@/constants";
 
-export interface SessionPayload {
+export type SessionPayload = {
   userId: string;
   expiresAt: Date;
-}
+};
 
 const getSecretKey = () => {
   const secret = process.env.SESSION_SECRET;

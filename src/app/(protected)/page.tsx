@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,6 +10,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
+import { Navbar, NavbarFallback } from "@/components/navbar";
+import { Footer } from "@/components/footer";
 
 const FeatureSchema = z.object({
   name: z.string(),
@@ -52,8 +55,12 @@ export default function Home() {
   const stack: Feature[] = z.array(FeatureSchema).parse(rawStack);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-8">
-      <main className="max-w-3xl w-full space-y-6">
+    <div className="flex min-h-screen flex-col bg-transparent font-sans selection:bg-indigo-500/20 selection:text-indigo-500">
+      <Suspense fallback={<NavbarFallback />}>
+        <Navbar />
+      </Suspense>
+
+      <main className="mx-auto w-full max-w-7xl flex-1 space-y-8 px-4 py-8 sm:px-6 lg:px-8">
         <div className="space-y-2 text-center sm:text-left">
           <div className="flex items-center gap-2 justify-center sm:justify-start">
             <h1 className="text-3xl font-bold tracking-tight">Anime Tracker</h1>
@@ -92,6 +99,8 @@ export default function Home() {
           </CardContent>
         </Card>
       </main>
+
+      <Footer />
     </div>
   );
 }
