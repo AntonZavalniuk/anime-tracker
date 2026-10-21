@@ -24,6 +24,11 @@ export const redirectIfAuthenticated = async () => {
   }
 };
 
+export const AuthCheck = async () => {
+  await redirectIfAuthenticated();
+  return null;
+};
+
 export const getCurrentUser = cache(async () => {
   const session = await getSession();
   if (!session?.userId) return null;
