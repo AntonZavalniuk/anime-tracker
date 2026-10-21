@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { revalidatePath } from "next/cache";
 import { createId } from "@paralleldrive/cuid2";
 import { Temporal } from "temporal-polyfill";
@@ -43,7 +44,7 @@ export type ImportAnimeInput = {
   status?: AnimeStatus;
 };
 
-export const getMyAnimeList = async () => {
+export const getMyAnimeList = cache(async () => {
   const { userId } = await verifySession();
 
   const anime = await db.orm.public.Anime.where({ userId })
@@ -51,7 +52,7 @@ export const getMyAnimeList = async () => {
     .all();
 
   return anime;
-};
+});
 
 export type Anime = Awaited<ReturnType<typeof getMyAnimeList>>[number];
 
