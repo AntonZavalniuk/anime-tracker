@@ -29,9 +29,11 @@ export type FilterableAnime = {
   id: string;
   title: string;
   originalTitle: string | null;
-  status: AnimeStatus;
+  season: number;
   episode: number;
   episodes: number;
+  status: AnimeStatus;
+  posterUrl: string | null;
 };
 
 export type AnimeCounts = {
@@ -148,9 +150,11 @@ export const getAnimeBatch = async ({
       id: item.id,
       title: item.title,
       originalTitle: item.originalTitle,
-      status: item.status,
+      season: item.season,
       episode: item.episode,
       episodes: item.episodes,
+      status: item.status,
+      posterUrl: item.posterUrl,
     }),
   );
 
@@ -178,9 +182,11 @@ export const addNewAnime = async (
     id: anime.id,
     title: anime.title,
     originalTitle: anime.originalTitle,
-    status: anime.status,
+    season: anime.season,
     episode: anime.episode,
     episodes: anime.episodes,
+    status: anime.status,
+    posterUrl: anime.posterUrl,
   };
 };
 
@@ -204,9 +210,11 @@ export const updateAnime = async (
     id: anime.id,
     title: anime.title,
     originalTitle: anime.originalTitle,
-    status: anime.status,
+    season: anime.season,
     episode: anime.episode,
     episodes: anime.episodes,
+    status: anime.status,
+    posterUrl: anime.posterUrl,
   };
 };
 
@@ -239,6 +247,24 @@ export const updateAnimeEpisode = async (id: string, newEpisode: number) => {
 
   revalidatePath("/");
   return { id: updated.id, episode: updated.episode };
+};
+
+export const exportAnimeList = async (): Promise<ImportAnimeInput[]> => {
+  const { userId } = await verifySession();
+
+  const rows = await db.orm.public.Anime.where({ userId })
+    .orderBy((m) => m.title.asc())
+    .all();
+
+  return rows.map((item) => ({
+    title: item.title,
+    originalTitle: item.originalTitle,
+    posterUrl: item.posterUrl,
+    season: item.season,
+    episode: item.episode,
+    episodes: item.episodes,
+    status: item.status,
+  }));
 };
 
 export const importAnimeList = async (

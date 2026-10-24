@@ -20,6 +20,7 @@ import type {
 } from "@/actions/anime";
 import {
   getAnimeBatch,
+  getAnimeCounts,
   addNewAnime,
   updateAnime,
   deleteAnime,
@@ -42,6 +43,7 @@ interface AnimeContextValue {
   isLoading: boolean;
   isLoadingMore: boolean;
   loadMore: () => Promise<void>;
+  refreshList: () => Promise<void>;
 
   status: StatusFilter;
   setStatus: (status: StatusFilter) => void;
@@ -53,6 +55,7 @@ interface AnimeContextValue {
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
   showOriginalTitle: boolean;
+  setShowOriginalTitle: (show: boolean) => void;
 
   addAnime: (input: UpdateAnimeInput) => Promise<void>;
   updateAnime: (id: string, input: UpdateAnimeInput) => Promise<void>;
@@ -100,7 +103,7 @@ export const AnimeProvider = ({
   const [viewMode, setViewModeState] = useState<ViewMode>(
     initialTableSettings.viewMode,
   );
-  const [showOriginalTitle] = useState<boolean>(
+  const [showOriginalTitle, setShowOriginalTitleState] = useState<boolean>(
     initialTableSettings.showOriginalTitle,
   );
 
@@ -246,13 +249,51 @@ export const AnimeProvider = ({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [hasMore, isLoadingMore, isLoading, nextOffset, items.length, status, debouncedQuery]);
+  }, [
+    hasMore,
+    isLoadingMore,
+    isLoading,
+    nextOffset,
+    items.length,
+    status,
+    debouncedQuery,
+  ]);
+
+  // Refresh entire list
+  const refreshList = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [batch, newCounts] = await Promise.all([
+        getAnimeBatch({
+          offset: 0,
+          limit: 25,
+          status,
+          query: debouncedQuery,
+        }),
+        getAnimeCounts(),
+      ]);
+      setItems(batch.items);
+      setHasMore(batch.hasMore);
+      setNextOffset(batch.nextOffset);
+      setCounts(newCounts);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [status, debouncedQuery]);
 
   // View mode handler
   const setViewMode = useCallback((mode: ViewMode) => {
     setViewModeState(mode);
     startActionTransition(async () => {
       await updateTableSettings({ viewMode: mode });
+    });
+  }, []);
+
+  // Show original title toggle handler
+  const setShowOriginalTitle = useCallback((show: boolean) => {
+    setShowOriginalTitleState(show);
+    startActionTransition(async () => {
+      await updateTableSettings({ showOriginalTitle: show });
     });
   }, []);
 
@@ -264,9 +305,11 @@ export const AnimeProvider = ({
         id: tempId,
         title: input.title,
         originalTitle: input.originalTitle,
-        status: input.status,
+        season: input.season,
         episode: input.episode,
         episodes: input.episodes,
+        status: input.status,
+        posterUrl: input.posterUrl ?? null,
       };
 
       startActionTransition(async () => {
@@ -275,18 +318,7 @@ export const AnimeProvider = ({
 
         const created = await addNewAnime(input);
         if (created) {
-          const realItem: FilterableAnime = {
-            id: created.id,
-            title: created.title,
-            originalTitle: created.originalTitle,
-            status: created.status,
-            episode: created.episode,
-            episodes: created.episodes,
-          };
-          setItems((prev) => [
-            realItem,
-            ...prev.filter((i) => i.id !== tempId),
-          ]);
+          setItems((prev) => [created, ...prev.filter((i) => i.id !== tempId)]);
           setCounts((prev) => ({
             ...prev,
             ALL: prev.ALL + 1,
@@ -305,9 +337,11 @@ export const AnimeProvider = ({
         id,
         title: input.title,
         originalTitle: input.originalTitle,
-        status: input.status,
+        season: input.season,
         episode: input.episode,
         episodes: input.episodes,
+        status: input.status,
+        posterUrl: input.posterUrl ?? null,
       };
 
       startActionTransition(async () => {
@@ -316,9 +350,7 @@ export const AnimeProvider = ({
 
         const updated = await updateAnime(id, input);
         if (updated) {
-          setItems((prev) =>
-            prev.map((i) => (i.id === id ? { ...i, ...optimisticItem } : i)),
-          );
+          setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
         }
       });
     },
@@ -374,6 +406,7 @@ export const AnimeProvider = ({
         isLoading,
         isLoadingMore,
         loadMore,
+        refreshList,
         status,
         setStatus,
         query,
@@ -383,6 +416,7 @@ export const AnimeProvider = ({
         viewMode,
         setViewMode,
         showOriginalTitle,
+        setShowOriginalTitle,
         addAnime: handleAddAnime,
         updateAnime: handleUpdateAnime,
         deleteAnime: handleDeleteAnime,
