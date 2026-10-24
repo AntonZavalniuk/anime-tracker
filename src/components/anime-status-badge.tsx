@@ -47,9 +47,12 @@ export const AnimeStatusBadge = ({
         )}
       >
         <span
-          className={cn("h-1.5 w-1.5 rounded-full shadow-xs", config.dotClass)}
+          className={cn(
+            "inline-block h-2 w-2 rounded-full shrink-0 shadow-xs",
+            config.dotClass,
+          )}
         />
-        {config.label}
+        <span>{config.label}</span>
       </span>
     );
   }
@@ -62,8 +65,13 @@ export const AnimeStatusBadge = ({
         className,
       )}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-full", config.dotClass)} />
-      {config.label}
+      <span
+        className={cn(
+          "inline-block h-2 w-2 rounded-full shrink-0",
+          config.dotClass,
+        )}
+      />
+      <span>{config.label}</span>
     </span>
   );
 };

@@ -32,7 +32,7 @@ export const AnimeGrid = ({ animeList, showOriginalTitle }: AnimeGridProps) => {
             className="group animate-scroll-entry relative flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/50 shadow-md backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-border hover:shadow-xl"
           >
             {/* Poster / Image Section */}
-            <div className="relative aspect-[3/4] w-full overflow-hidden bg-muted/40">
+            <div className="relative aspect-3/4 w-full overflow-hidden bg-muted/40">
               {item.posterUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

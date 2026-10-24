@@ -41,7 +41,9 @@ export const AnimeEpisodeStepper = ({
   };
 
   return (
-    <div className={cn("flex flex-col items-center gap-1.5", className)}>
+    <div
+      className={cn("flex flex-col items-center gap-1.5 shrink-0", className)}
+    >
       <div className="flex items-center gap-2 text-xs">
         <button
           type="button"
@@ -49,7 +51,7 @@ export const AnimeEpisodeStepper = ({
           disabled={!canDecrement}
           aria-label="Previous episode"
           className={cn(
-            "flex h-6 w-6 items-center justify-center rounded-md border border-border/60 bg-background/60 text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:scale-95",
+            "flex h-6 w-6 items-center justify-center rounded-md border border-border/60 bg-background/60 text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:scale-95 cursor-pointer",
             !canDecrement &&
               "pointer-events-none opacity-30 hover:border-border/60 hover:bg-background/60 hover:text-muted-foreground",
           )}
@@ -57,7 +59,7 @@ export const AnimeEpisodeStepper = ({
           <Minus className="h-3 w-3" />
         </button>
 
-        <span className="flex items-center gap-1 font-medium tracking-tight">
+        <span className="flex items-center gap-1 font-medium tracking-tight whitespace-nowrap min-w-16 justify-center">
           <span className="font-bold text-foreground">{episode}</span>
           <span className="text-muted-foreground/60">/</span>
           <span className="text-muted-foreground">
@@ -71,7 +73,7 @@ export const AnimeEpisodeStepper = ({
           disabled={!canIncrement}
           aria-label="Next episode"
           className={cn(
-            "flex h-6 w-6 items-center justify-center rounded-md border border-border/60 bg-background/60 text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:scale-95",
+            "flex h-6 w-6 items-center justify-center rounded-md border border-border/60 bg-background/60 text-muted-foreground transition-all hover:border-border hover:bg-accent hover:text-foreground active:scale-95 cursor-pointer",
             !canIncrement &&
               "pointer-events-none opacity-30 hover:border-border/60 hover:bg-background/60 hover:text-muted-foreground",
           )}
@@ -83,12 +85,12 @@ export const AnimeEpisodeStepper = ({
       {/* Progress bar */}
       <div
         className={cn(
-          "h-1 w-full max-w-[130px] overflow-hidden rounded-full bg-border/50 dark:bg-muted/60",
-          compact && "max-w-[100px]",
+          "h-1.5 w-24 sm:w-28 overflow-hidden rounded-full bg-border/80 dark:bg-muted/80 shadow-inner",
+          compact && "w-20",
         )}
       >
         <div
-          className="h-full rounded-full bg-linear-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+          className="h-full rounded-full bg-emerald-500 transition-all duration-300"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
