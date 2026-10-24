@@ -2,16 +2,15 @@ import Link from "next/link";
 import { Tv, Sparkles } from "lucide-react";
 import { NAVIGATION_LINKS } from "@/constants";
 import { getCurrentUser } from "@/lib/dal";
-import { getMyAnimeList } from "@/actions/anime";
 import { ThemeToggle } from "./theme-toggle";
 import { UserControls } from "./user-controls";
+import { AnimeCountBadge } from "./anime-count-badge";
 
 export const Navbar = async () => {
-  const [anime, user] = await Promise.all([getMyAnimeList(), getCurrentUser()]);
-  const totalCount = anime.length;
+  const user = await getCurrentUser();
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/70 backdrop-blur-xl transition-colors">
+    <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-card/40 backdrop-blur-xl transition-colors">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
           <Link
@@ -26,9 +25,7 @@ export const Navbar = async () => {
               <h1 className="bg-linear-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-lg font-bold tracking-tight text-transparent sm:text-xl">
                 AniTracker
               </h1>
-              <span className="inline-flex items-center rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-xs font-semibold text-indigo-600 ring-1 ring-indigo-500/20 ring-inset dark:text-indigo-400">
-                {totalCount}
-              </span>
+              <AnimeCountBadge />
             </div>
             <p className="hidden text-xs text-muted-foreground sm:block">
               Track your anime, seasons &amp; watching progress

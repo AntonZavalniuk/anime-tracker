@@ -23,7 +23,7 @@ export const ThemeToggle = () => {
       variant="ghost"
       size="sm"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="relative h-9 w-9 gap-2 rounded-xl border border-border/50 bg-background/50 px-0 transition-all hover:bg-accent hover:text-accent-foreground sm:w-auto sm:px-3"
+      className="relative h-9 w-9 gap-2 rounded-xl border border-border/50 bg-background/40 px-0 transition-all hover:bg-accent hover:text-accent-foreground sm:w-auto sm:px-3"
       title="Toggle theme (Press D)"
       suppressHydrationWarning
     >

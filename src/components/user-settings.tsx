@@ -60,7 +60,7 @@ export const UserSettings = ({ user }: UserSettingsProps) => {
 
       <div className="space-y-6">
         {/* ── Username ── */}
-        <div className="rounded-2xl border border-border/50 bg-card/60 p-6 shadow-xl shadow-black/5 backdrop-blur-xl">
+        <div className="rounded-2xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5 backdrop-blur-xl">
           <div className="mb-5 flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 ring-1 ring-indigo-500/20">
               <User className="h-4 w-4 text-indigo-500" />
@@ -111,7 +111,7 @@ export const UserSettings = ({ user }: UserSettingsProps) => {
         </div>
 
         {/* ── Password ── */}
-        <div className="rounded-2xl border border-border/50 bg-card/60 p-6 shadow-xl shadow-black/5 backdrop-blur-xl">
+        <div className="rounded-2xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5 backdrop-blur-xl">
           <div className="mb-5 flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10 ring-1 ring-purple-500/20">
               <Lock className="h-4 w-4 text-purple-500" />

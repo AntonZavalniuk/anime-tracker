@@ -4,6 +4,7 @@ import { cache } from "react";
 import { revalidatePath } from "next/cache";
 import { createId } from "@paralleldrive/cuid2";
 import { Temporal } from "temporal-polyfill";
+import { and, or } from "@prisma/orm-postgres/orm-client";
 
 import { verifySession } from "@/lib/dal";
 import { db } from "../prisma/db";
@@ -24,7 +25,36 @@ const isAnimeStatus = (value: unknown): value is AnimeStatus => {
   );
 };
 
-type UpdateAnimeInput = {
+export type FilterableAnime = {
+  id: string;
+  title: string;
+  originalTitle: string | null;
+  status: AnimeStatus;
+  episode: number;
+  episodes: number;
+};
+
+export type AnimeCounts = {
+  ALL: number;
+  AIRING: number;
+  COMPLETED: number;
+  UPCOMING: number;
+};
+
+export type GetAnimeBatchParams = {
+  offset?: number;
+  limit?: number;
+  status?: AnimeStatus | "ALL";
+  query?: string;
+};
+
+export type AnimeBatchResult = {
+  items: FilterableAnime[];
+  nextOffset: number | null;
+  hasMore: boolean;
+};
+
+export type UpdateAnimeInput = {
   title: string;
   originalTitle: string | null;
   posterUrl?: string | null;
@@ -56,7 +86,84 @@ export const getMyAnimeList = cache(async () => {
 
 export type Anime = Awaited<ReturnType<typeof getMyAnimeList>>[number];
 
-export const addNewAnime = async (data: UpdateAnimeInput) => {
+export const getAnimeCounts = cache(async (): Promise<AnimeCounts> => {
+  const { userId } = await verifySession();
+
+  const groups = await db.orm.public.Anime.where({ userId })
+    .groupBy("status")
+    .aggregate((a) => ({ count: a.count() }));
+
+  const counts: AnimeCounts = {
+    ALL: 0,
+    AIRING: 0,
+    COMPLETED: 0,
+    UPCOMING: 0,
+  };
+
+  for (const group of groups) {
+    const status = group.status as AnimeStatus;
+    if (status in counts) {
+      counts[status] = group.count;
+      counts.ALL += group.count;
+    }
+  }
+
+  return counts;
+});
+
+export const getAnimeBatch = async ({
+  offset = 0,
+  limit = 25,
+  status = "ALL",
+  query = "",
+}: GetAnimeBatchParams = {}): Promise<AnimeBatchResult> => {
+  const { userId } = await verifySession();
+
+  const cleanQuery = query.trim();
+
+  const baseCollection = db.orm.public.Anime.where((m) => {
+    const conditions = [m.userId.eq(userId)];
+
+    if (status && status !== "ALL") {
+      conditions.push(m.status.eq(status));
+    }
+
+    if (cleanQuery) {
+      const q = `%${cleanQuery}%`;
+      conditions.push(or(m.title.ilike(q), m.originalTitle.ilike(q)));
+    }
+
+    return and(...conditions);
+  });
+
+  const rows = await baseCollection
+    .orderBy((m) => m.title.asc())
+    .offset(offset)
+    .limit(limit + 1)
+    .all();
+
+  const hasMore = rows.length > limit;
+  const items: FilterableAnime[] = (hasMore ? rows.slice(0, limit) : rows).map(
+    (item) => ({
+      id: item.id,
+      title: item.title,
+      originalTitle: item.originalTitle,
+      status: item.status,
+      episode: item.episode,
+      episodes: item.episodes,
+    }),
+  );
+
+  return {
+    items,
+    nextOffset: hasMore ? offset + limit : null,
+    hasMore,
+  };
+};
+
+export const addNewAnime = async (
+  data: UpdateAnimeInput,
+): Promise<FilterableAnime> => {
   const { userId } = await verifySession();
 
   const anime = await db.orm.public.Anime.create({
@@ -67,10 +174,20 @@ export const addNewAnime = async (data: UpdateAnimeInput) => {
   });
 
   revalidatePath("/");
-  return anime;
+  return {
+    id: anime.id,
+    title: anime.title,
+    originalTitle: anime.originalTitle,
+    status: anime.status,
+    episode: anime.episode,
+    episodes: anime.episodes,
+  };
 };
 
-export const updateAnime = async (id: string, data: UpdateAnimeInput) => {
+export const updateAnime = async (
+  id: string,
+  data: UpdateAnimeInput,
+): Promise<FilterableAnime> => {
   const { userId } = await verifySession();
 
   const anime = await db.orm.public.Anime.where({ id, userId }).update({
@@ -78,8 +195,19 @@ export const updateAnime = async (id: string, data: UpdateAnimeInput) => {
     updatedAt: Temporal.Now.plainDateTimeISO(),
   });
 
+  if (!anime) {
+    throw new Error("Anime not found or unauthorized");
+  }
+
   revalidatePath("/");
-  return anime;
+  return {
+    id: anime.id,
+    title: anime.title,
+    originalTitle: anime.originalTitle,
+    status: anime.status,
+    episode: anime.episode,
+    episodes: anime.episodes,
+  };
 };
 
 export const deleteAnime = async (id: string) => {
@@ -87,8 +215,12 @@ export const deleteAnime = async (id: string) => {
 
   const anime = await db.orm.public.Anime.where({ id, userId }).delete();
 
+  if (!anime) {
+    throw new Error("Anime not found or unauthorized");
+  }
+
   revalidatePath("/");
-  return anime;
+  return { id: anime.id, success: true };
 };
 
 export const updateAnimeEpisode = async (id: string, newEpisode: number) => {
@@ -101,8 +233,12 @@ export const updateAnimeEpisode = async (id: string, newEpisode: number) => {
     updatedAt: Temporal.Now.plainDateTimeISO(),
   });
 
+  if (!updated) {
+    throw new Error("Anime not found or unauthorized");
+  }
+
   revalidatePath("/");
-  return updated;
+  return { id: updated.id, episode: updated.episode };
 };
 
 export const importAnimeList = async (

@@ -25,7 +25,7 @@ export const UserControls = ({ user }: UserControlsProps) => {
     return (
       <Link
         href={NAVIGATION_LINKS.login}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-background/50 transition-all hover:bg-accent"
+        className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-background/40 transition-all hover:bg-accent"
         title="Log in"
       >
         <User className="h-4 w-4" />
@@ -51,7 +51,7 @@ export const UserControls = ({ user }: UserControlsProps) => {
         size="sm"
         onClick={handleLogout}
         disabled={isPending}
-        className="relative h-9 w-9 rounded-xl border border-border/50 bg-background/50 transition-all hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-500"
+        className="relative h-9 w-9 rounded-xl border border-border/50 bg-background/40 transition-all hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-500"
         title="Log out"
       >
         <LogOut className="h-4 w-4" />
