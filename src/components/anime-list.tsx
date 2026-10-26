@@ -12,9 +12,14 @@ import { AnimeDeleteDialog } from "@/components/anime-delete-dialog";
 type AnimeListProps = {
   animeList: FilterableAnime[];
   showOriginalTitle: boolean;
+  showPosterInTableRow: boolean;
 };
 
-export const AnimeList = ({ animeList, showOriginalTitle }: AnimeListProps) => {
+export const AnimeList = ({
+  animeList,
+  showOriginalTitle,
+  showPosterInTableRow,
+}: AnimeListProps) => {
   const { updateEpisode } = useAnime();
   const [editingAnime, setEditingAnime] = useState<FilterableAnime | null>(
     null,
@@ -34,7 +39,22 @@ export const AnimeList = ({ animeList, showOriginalTitle }: AnimeListProps) => {
             >
               {/* Title, Original Title, Season Badge */}
               <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
-                <div className="min-w-0 flex-1 space-y-0.5">
+                {showPosterInTableRow && (
+                  <div className="h-[42px] w-[30px] shrink-0 overflow-hidden rounded-md bg-muted/60">
+                    {item.posterUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.posterUrl}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-linear-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10" />
+                    )}
+                  </div>
+                )}
+                <div className="min-w-0 max-w-[260px] flex-1 space-y-0.5 sm:max-w-sm">
                   <div className="flex items-center gap-2 min-w-0">
                     <p
                       className="truncate text-sm font-semibold text-foreground"

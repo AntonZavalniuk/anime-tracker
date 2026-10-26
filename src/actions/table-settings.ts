@@ -15,6 +15,7 @@ export type SerializableTableSettings = {
   id: string;
   userId: string;
   showOriginalTitle: boolean;
+  showPosterInTableRow: boolean;
   viewMode: ViewMode;
 };
 
@@ -37,12 +38,14 @@ export const getTableSettings = cache(
         id: createId(),
         userId,
         showOriginalTitle: true,
+        showPosterInTableRow: false,
         updatedAt: Temporal.Now.plainDateTimeISO(),
       });
       return {
         id: created.id,
         userId: created.userId,
         showOriginalTitle: created.showOriginalTitle,
+        showPosterInTableRow: created.showPosterInTableRow,
         viewMode: created.viewMode,
       };
     }
@@ -51,6 +54,7 @@ export const getTableSettings = cache(
       id: settings.id,
       userId: settings.userId,
       showOriginalTitle: settings.showOriginalTitle,
+      showPosterInTableRow: settings.showPosterInTableRow,
       viewMode: settings.viewMode,
     };
   },
@@ -76,6 +80,7 @@ export const updateTableSettings = async (
         id: createId(),
         userId,
         showOriginalTitle: true,
+        showPosterInTableRow: false,
         updatedAt: Temporal.Now.plainDateTimeISO(),
       });
 
@@ -88,6 +93,7 @@ export const updateTableSettings = async (
     id: settings.id,
     userId: settings.userId,
     showOriginalTitle: settings.showOriginalTitle,
+    showPosterInTableRow: settings.showPosterInTableRow,
     viewMode: settings.viewMode,
   };
 };

@@ -12,6 +12,7 @@ export const AnimeView = () => {
     animeList,
     viewMode,
     showOriginalTitle,
+    showPosterInTableRow,
     hasMore,
     isLoading,
     isLoadingMore,
@@ -61,6 +62,7 @@ export const AnimeView = () => {
         <AnimeList
           animeList={animeList}
           showOriginalTitle={showOriginalTitle}
+          showPosterInTableRow={showPosterInTableRow}
         />
       )}
 
