@@ -37,12 +37,13 @@ namespace public {
   }
 
   model TableSettings {
-    id                String            @id(map: "TableSettings_pkey")
-    showOriginalTitle Boolean           @default(true)
-    updatedAt         Timestamp(3)
-    userId            String
-    viewMode          pg.enum(ViewMode) @default("TABLE")
-    user              User              @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "TableSettings_userId_fkey")
+    id                   String            @id(map: "TableSettings_pkey")
+    showOriginalTitle    Boolean           @default(true)
+    showPosterInTableRow Boolean           @default(false)
+    updatedAt            Timestamp(3)
+    userId               String
+    viewMode             pg.enum(ViewMode) @default("TABLE")
+    user                 User              @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade, map: "TableSettings_userId_fkey")
 
     @@index([userId], map: "TableSettings_userId_idx")
   }

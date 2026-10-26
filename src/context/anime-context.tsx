@@ -56,6 +56,8 @@ interface AnimeContextValue {
   setViewMode: (mode: ViewMode) => void;
   showOriginalTitle: boolean;
   setShowOriginalTitle: (show: boolean) => void;
+  showPosterInTableRow: boolean;
+  setShowPosterInTableRow: (show: boolean) => void;
 
   addAnime: (input: UpdateAnimeInput) => Promise<void>;
   updateAnime: (id: string, input: UpdateAnimeInput) => Promise<void>;
@@ -80,6 +82,7 @@ interface AnimeProviderProps {
   initialTableSettings: {
     viewMode: ViewMode;
     showOriginalTitle: boolean;
+    showPosterInTableRow: boolean;
   };
 }
 
@@ -106,6 +109,8 @@ export const AnimeProvider = ({
   const [showOriginalTitle, setShowOriginalTitleState] = useState<boolean>(
     initialTableSettings.showOriginalTitle,
   );
+  const [showPosterInTableRow, setShowPosterInTableRowState] =
+    useState<boolean>(initialTableSettings.showPosterInTableRow);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -297,6 +302,14 @@ export const AnimeProvider = ({
     });
   }, []);
 
+  // Show poster in table row toggle handler
+  const setShowPosterInTableRow = useCallback((show: boolean) => {
+    setShowPosterInTableRowState(show);
+    startActionTransition(async () => {
+      await updateTableSettings({ showPosterInTableRow: show });
+    });
+  }, []);
+
   // Action: Add Anime
   const handleAddAnime = useCallback(
     async (input: UpdateAnimeInput) => {
@@ -417,6 +430,8 @@ export const AnimeProvider = ({
         setViewMode,
         showOriginalTitle,
         setShowOriginalTitle,
+        showPosterInTableRow,
+        setShowPosterInTableRow,
         addAnime: handleAddAnime,
         updateAnime: handleUpdateAnime,
         deleteAnime: handleDeleteAnime,

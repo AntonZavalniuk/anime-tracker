@@ -18,7 +18,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'5366f7e99db10b05435b14f85f00bee98fbdfeaf9ee9ea3e25f1b1b3e3621118'>;
+  StorageHashBase<'4b12a7c33f070e9f1de812e6dfe7c439f4674cc9d6df4807896434c9ab36a4dd'>;
 export type ExecutionHash = ExecutionHashBase<string>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
@@ -249,6 +249,7 @@ export type FieldOutputTypes = {
     readonly TableSettings: {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly showOriginalTitle: CodecTypes['pg/bool@1']['output'];
+      readonly showPosterInTableRow: CodecTypes['pg/bool@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamp-temporal@1']['output'];
       readonly userId: CodecTypes['pg/text@1']['output'];
       readonly viewMode: 'TABLE' | 'GRID';
@@ -281,6 +282,7 @@ export type FieldInputTypes = {
     readonly TableSettings: {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly showOriginalTitle: CodecTypes['pg/bool@1']['input'];
+      readonly showPosterInTableRow: CodecTypes['pg/bool@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamp-temporal@1']['input'];
       readonly userId: CodecTypes['pg/text@1']['input'];
       readonly viewMode: 'TABLE' | 'GRID';
@@ -313,6 +315,7 @@ export type StorageColumnTypes = {
     readonly TableSettings: {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly showOriginalTitle: CodecTypes['pg/bool@1']['output'];
+      readonly showPosterInTableRow: CodecTypes['pg/bool@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamp-temporal@1']['output'];
       readonly userId: CodecTypes['pg/text@1']['output'];
       readonly viewMode: 'TABLE' | 'GRID';
@@ -345,6 +348,7 @@ export type StorageColumnInputTypes = {
     readonly TableSettings: {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly showOriginalTitle: CodecTypes['pg/bool@1']['input'];
+      readonly showPosterInTableRow: CodecTypes['pg/bool@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamp-temporal@1']['input'];
       readonly userId: CodecTypes['pg/text@1']['input'];
       readonly viewMode: 'TABLE' | 'GRID';
@@ -379,6 +383,7 @@ export namespace Models {
   export type public_TableSettings = {
     id: CodecTypes['pg/text@1']['output'];
     showOriginalTitle: CodecTypes['pg/bool@1']['output'];
+    showPosterInTableRow: CodecTypes['pg/bool@1']['output'];
     updatedAt: CodecTypes['pg/timestamp-temporal@1']['output'];
     userId: CodecTypes['pg/text@1']['output'];
     viewMode: 'TABLE' | 'GRID';
@@ -547,6 +552,16 @@ type ContractBase = Omit<
                   readonly default: {
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/bool@1', true>;
+                  };
+                  readonly many: false;
+                };
+                readonly showPosterInTableRow: {
+                  readonly dataType: 'pg/bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
                   };
                   readonly many: false;
                 };
@@ -796,6 +811,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
+              readonly showPosterInTableRow: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
               readonly updatedAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -834,6 +853,7 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly id: { readonly column: 'id' };
                 readonly showOriginalTitle: { readonly column: 'showOriginalTitle' };
+                readonly showPosterInTableRow: { readonly column: 'showPosterInTableRow' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
                 readonly userId: { readonly column: 'userId' };
                 readonly viewMode: { readonly column: 'viewMode' };

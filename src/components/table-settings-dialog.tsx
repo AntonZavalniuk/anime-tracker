@@ -17,6 +17,8 @@ export const TableSettingsDialog = ({
   const {
     showOriginalTitle,
     setShowOriginalTitle,
+    showPosterInTableRow,
+    setShowPosterInTableRow,
     viewMode,
     setViewMode,
   } = useAnime();
@@ -69,6 +71,36 @@ export const TableSettingsDialog = ({
                   className={cn(
                     "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
                     showOriginalTitle ? "translate-x-4" : "translate-x-0",
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Show Poster Toggle */}
+            <div className="flex items-center justify-between rounded-xl border border-border/60 bg-background/40 p-3.5">
+              <div className="space-y-0.5">
+                <p className="text-xs font-semibold text-foreground">
+                  Poster Thumbnail
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Show a small poster image in table rows
+                </p>
+              </div>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showPosterInTableRow}
+                onClick={() => setShowPosterInTableRow(!showPosterInTableRow)}
+                className={cn(
+                  "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
+                  showPosterInTableRow ? "bg-indigo-600" : "bg-muted",
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
+                    showPosterInTableRow ? "translate-x-4" : "translate-x-0",
                   )}
                 />
               </button>

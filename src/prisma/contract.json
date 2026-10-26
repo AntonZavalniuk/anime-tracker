@@ -184,6 +184,13 @@
                   "kind": "scalar"
                 }
               },
+              "showPosterInTableRow": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "updatedAt": {
                 "nullable": false,
                 "type": {
@@ -237,6 +244,9 @@
                 },
                 "showOriginalTitle": {
                   "column": "showOriginalTitle"
+                },
+                "showPosterInTableRow": {
+                  "column": "showPosterInTableRow"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -536,6 +546,15 @@
                   },
                   "nullable": false
                 },
+                "showPosterInTableRow": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nullable": false
+                },
                 "updatedAt": {
                   "codecId": "pg/timestamp-temporal@1",
                   "dataType": "pg/timestamp",
@@ -707,7 +726,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "5366f7e99db10b05435b14f85f00bee98fbdfeaf9ee9ea3e25f1b1b3e3621118"
+    "storageHash": "4b12a7c33f070e9f1de812e6dfe7c439f4674cc9d6df4807896434c9ab36a4dd"
   },
   "capabilities": {
     "postgres": {

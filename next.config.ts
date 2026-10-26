@@ -12,6 +12,20 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "shikimori.io",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "anime-bit.ru",
+        pathname: "/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

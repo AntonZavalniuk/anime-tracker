@@ -25,6 +25,7 @@ const ProtectedLayoutContent = async ({
       initialTableSettings={{
         viewMode: tableSettings.viewMode,
         showOriginalTitle: tableSettings.showOriginalTitle,
+        showPosterInTableRow: tableSettings.showPosterInTableRow,
       }}
     >
       <Navbar />
