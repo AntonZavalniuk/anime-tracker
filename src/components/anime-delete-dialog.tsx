@@ -72,7 +72,7 @@ export const AnimeDeleteDialog = ({
               type="button"
               onClick={handleDelete}
               disabled={isDeleting}
-              className="flex items-center gap-1.5 rounded-xl bg-destructive px-4 py-2 text-xs font-semibold text-destructive-foreground shadow-md transition-all hover:bg-destructive/90 active:scale-95 disabled:opacity-60"
+              className="flex items-center gap-1.5 rounded-xl bg-destructive px-4 py-2 text-xs font-semibold text-white shadow-md transition-all hover:bg-destructive/90 active:scale-95 disabled:opacity-60"
             >
               {isDeleting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Delete
