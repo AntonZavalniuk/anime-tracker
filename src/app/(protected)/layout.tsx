@@ -4,6 +4,7 @@ import { getAnimeBatch, getAnimeCounts } from "@/actions/anime";
 import { getTableSettings } from "@/actions/table-settings";
 import { AnimeProvider } from "@/context/anime-context";
 import { Navbar, NavbarFallback } from "@/components/navbar";
+import { ScrollToTopButton } from "@/components/scroll-to-top-button";
 
 const ProtectedLayoutContent = async ({
   children,
@@ -44,6 +45,7 @@ export default function ProtectedLayout({
       <Suspense fallback={<NavbarFallback />}>
         <ProtectedLayoutContent>{children}</ProtectedLayoutContent>
       </Suspense>
+      <ScrollToTopButton />
     </div>
   );
 }
