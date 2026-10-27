@@ -24,7 +24,7 @@ export const AnimeEpisodeStepper = ({
     : 0;
 
   const canDecrement = episode > 0;
-  const canIncrement = !hasLimit || episode < episodes;
+  const canIncrement = true;
 
   const handleDecrement = (e: React.MouseEvent) => {
     e.stopPropagation();
