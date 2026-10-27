@@ -10,15 +10,102 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  FileJson,
+  FileSpreadsheet,
   FileText,
 } from "lucide-react";
 import { exportAnimeList, importAnimeList } from "@/actions/anime";
+import type { AnimeStatus, ImportAnimeInput } from "@/actions/anime";
 import { useAnime } from "@/context/anime-context";
 import { cn } from "@/lib/utils";
 
 type ExportImportDialogProps = {
   isOpen: boolean;
   onClose: () => void;
+};
+
+type FileFormat = "json" | "csv" | "excel";
+
+type PendingImportFile = {
+  format: FileFormat;
+  data: string | ArrayBuffer;
+};
+
+type RawRow = Record<string, unknown>;
+
+const FORMAT_OPTIONS: { value: FileFormat; label: string; icon: typeof FileJson }[] = [
+  { value: "json", label: "JSON", icon: FileJson },
+  { value: "csv", label: "CSV", icon: FileText },
+  { value: "excel", label: "Excel", icon: FileSpreadsheet },
+];
+
+const formatFromFileName = (fileName: string): FileFormat => {
+  const ext = fileName.split(".").pop()?.toLowerCase();
+  if (ext === "csv") return "csv";
+  if (ext === "xlsx" || ext === "xls") return "excel";
+  return "json";
+};
+
+const downloadBlob = (blob: Blob, filename: string) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+const parseImportFile = async (file: PendingImportFile): Promise<RawRow[]> => {
+  if (file.format === "json") {
+    const parsed = JSON.parse(file.data as string);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  }
+
+  const XLSX = await import("xlsx");
+  const workbook =
+    file.format === "csv"
+      ? XLSX.read(file.data as string, { type: "string" })
+      : XLSX.read(new Uint8Array(file.data as ArrayBuffer), { type: "array" });
+
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  return XLSX.utils.sheet_to_json<RawRow>(sheet, { defval: "" });
+};
+
+const normalizeImportRows = (rows: RawRow[]): ImportAnimeInput[] => {
+  const toNumber = (value: unknown) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : undefined;
+  };
+
+  const toText = (value: unknown) => {
+    if (value === undefined || value === null) return null;
+    const text = String(value).trim();
+    return text ? text : null;
+  };
+
+  return rows
+    .map((row): ImportAnimeInput | null => {
+      const title =
+        typeof row.title === "string" ? row.title.trim() : String(row.title ?? "").trim();
+      if (!title) return null;
+
+      return {
+        title,
+        originalTitle: toText(row.originalTitle),
+        posterUrl: toText(row.posterUrl),
+        season: toNumber(row.season),
+        episode: toNumber(row.episode),
+        episodes: toNumber(row.episodes),
+        status:
+          typeof row.status === "string" && row.status.trim()
+            ? (row.status.trim().toUpperCase() as AnimeStatus)
+            : undefined,
+      };
+    })
+    .filter((item): item is ImportAnimeInput => item !== null);
 };
 
 export const ExportImportDialog = ({
@@ -30,7 +117,8 @@ export const ExportImportDialog = ({
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [duplicateMode, setDuplicateMode] = useState<"skip" | "overwrite">("skip");
-  const [importJsonText, setImportJsonText] = useState("");
+  const [exportFormat, setExportFormat] = useState<FileFormat>("json");
+  const [importFile, setImportFile] = useState<PendingImportFile | null>(null);
   const [importFileName, setImportFileName] = useState("");
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error";
@@ -44,16 +132,40 @@ export const ExportImportDialog = ({
     setStatusMessage(null);
     try {
       const data = await exportAnimeList();
-      const jsonString = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonString], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `anitracker-backup-${new Date().toISOString().split("T")[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const today = new Date().toISOString().split("T")[0];
+
+      if (exportFormat === "json") {
+        const jsonString = JSON.stringify(data, null, 2);
+        downloadBlob(
+          new Blob([jsonString], { type: "application/json" }),
+          `anitracker-backup-${today}.json`,
+        );
+      } else {
+        const XLSX = await import("xlsx");
+        const worksheet = XLSX.utils.json_to_sheet(data);
+
+        if (exportFormat === "csv") {
+          const csv = XLSX.utils.sheet_to_csv(worksheet);
+          downloadBlob(
+            new Blob([csv], { type: "text/csv;charset=utf-8;" }),
+            `anitracker-backup-${today}.csv`,
+          );
+        } else {
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "Anime");
+          const excelBuffer = XLSX.write(workbook, {
+            bookType: "xlsx",
+            type: "array",
+          });
+          downloadBlob(
+            new Blob([excelBuffer], {
+              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            }),
+            `anitracker-backup-${today}.xlsx`,
+          );
+        }
+      }
+
       setStatusMessage({
         type: "success",
         text: `Successfully exported ${data.length} anime titles.`,
@@ -72,20 +184,30 @@ export const ExportImportDialog = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const format = formatFromFileName(file.name);
     setImportFileName(file.name);
+    setStatusMessage(null);
+
     const reader = new FileReader();
     reader.onload = (event) => {
-      const content = event.target?.result as string;
-      setImportJsonText(content);
+      const result = event.target?.result;
+      if (result) {
+        setImportFile({ format, data: result });
+      }
     };
-    reader.readAsText(file);
+
+    if (format === "excel") {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsText(file);
+    }
   };
 
   const handleImport = async () => {
-    if (!importJsonText.trim()) {
+    if (!importFile) {
       setStatusMessage({
         type: "error",
-        text: "Please select a JSON file or paste JSON content.",
+        text: "Please select a JSON, CSV, or Excel file to import.",
       });
       return;
     }
@@ -94,11 +216,11 @@ export const ExportImportDialog = ({
     setStatusMessage(null);
 
     try {
-      const parsed = JSON.parse(importJsonText);
-      const items = Array.isArray(parsed) ? parsed : [parsed];
+      const rows = await parseImportFile(importFile);
+      const items = normalizeImportRows(rows);
 
       if (items.length === 0) {
-        throw new Error("No items found in the JSON file.");
+        throw new Error("No valid items found in the file.");
       }
 
       const res = await importAnimeList(items, duplicateMode);
@@ -108,12 +230,15 @@ export const ExportImportDialog = ({
         type: "success",
         text: `Import completed! Created: ${res.createdCount}, Updated: ${res.updatedCount}, Skipped: ${res.skippedCount}.`,
       });
-      setImportJsonText("");
+      setImportFile(null);
       setImportFileName("");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } catch (err) {
       setStatusMessage({
         type: "error",
-        text: err instanceof Error ? err.message : "Invalid JSON format",
+        text: err instanceof Error ? err.message : "Invalid or unsupported file format",
       });
     } finally {
       setIsImporting(false);
@@ -202,8 +327,33 @@ export const ExportImportDialog = ({
                   <span className="font-semibold text-foreground">
                     {totalCount}
                   </span>{" "}
-                  titles) as a standard JSON backup file.
+                  titles) as a backup file.
                 </p>
+              </div>
+
+              {/* Format selector */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  File format
+                </label>
+                <div className="flex gap-2">
+                  {FORMAT_OPTIONS.map(({ value, label, icon: Icon }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setExportFormat(value)}
+                      className={cn(
+                        "flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border/60 py-2 text-xs font-medium transition-all",
+                        exportFormat === value
+                          ? "border-indigo-500/50 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold"
+                          : "text-muted-foreground hover:bg-accent",
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <button
@@ -217,7 +367,11 @@ export const ExportImportDialog = ({
                 ) : (
                   <Download className="h-4 w-4" />
                 )}
-                <span>Download JSON Backup</span>
+                <span>
+                  Download{" "}
+                  {FORMAT_OPTIONS.find((f) => f.value === exportFormat)?.label}{" "}
+                  Backup
+                </span>
               </button>
             </div>
           ) : (
@@ -225,7 +379,7 @@ export const ExportImportDialog = ({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".json,application/json"
+                accept=".json,.csv,.xlsx,.xls,application/json,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                 onChange={handleFileChange}
                 className="hidden"
               />
@@ -236,7 +390,9 @@ export const ExportImportDialog = ({
               >
                 <Upload className="h-6 w-6 text-muted-foreground" />
                 <span className="mt-2 text-xs font-medium text-foreground">
-                  {importFileName ? importFileName : "Select JSON file to import"}
+                  {importFileName
+                    ? importFileName
+                    : "Select JSON, CSV, or Excel file to import"}
                 </span>
                 <span className="text-[11px] text-muted-foreground">
                   Click to browse files
@@ -279,7 +435,7 @@ export const ExportImportDialog = ({
               <button
                 type="button"
                 onClick={handleImport}
-                disabled={isImporting || !importJsonText}
+                disabled={isImporting || !importFile}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-indigo-500/20 transition-all hover:from-indigo-500 hover:to-purple-500 active:scale-95 disabled:opacity-60 cursor-pointer"
               >
                 {isImporting ? (
