@@ -1,28 +1,49 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState } from "react";
 import Link from "next/link";
-import { Mail, Lock, User, UserPlus, Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
+import { Mail, Lock, LogIn, Loader2 } from "lucide-react";
 import { AuthLogo } from "@/components/auth-logo";
 import { FormInput } from "@/components/form-input";
-import { register } from "@/actions/auth";
+import { login } from "@/actions/auth";
 import type { AuthFormState } from "@/actions/auth";
-import { NAVIGATION_LINKS } from "@/constants";
+import { LoginSchema } from "@/validation-schemas/auth";
 
-export const RegisterForm = () => {
-  const [state, action, pending] = useActionState<AuthFormState, FormData>(
+type LoginFormValues = z.infer<typeof LoginSchema>;
+
+export const LoginForm = () => {
+  const [state, formAction, pending] = useActionState<
+    AuthFormState,
+    FormData
+  >(login, undefined);
+
+  const {
     register,
-    undefined,
-  );
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(LoginSchema),
+    defaultValues: { email: "", password: "" },
+  });
+
+  const onSubmit = handleSubmit((data) => {
+    const formData = new FormData();
+    formData.append("email", data.email);
+    formData.append("password", data.password);
+    startTransition(() => formAction(formData));
+  });
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-transparent px-4 py-12">
       <div className="w-full max-w-md">
-        <AuthLogo subtitle="Create an account" />
+        <AuthLogo subtitle="Sign in to your account" />
 
         {/* Card */}
         <div className="rounded-2xl border border-border/50 bg-card/60 p-8 shadow-2xl shadow-black/10 backdrop-blur-xl">
-          <form action={action} className="space-y-5">
+          <form onSubmit={onSubmit} className="space-y-5" noValidate>
             {/* Global error */}
             {state?.message && !state.errors && (
               <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
@@ -33,37 +54,25 @@ export const RegisterForm = () => {
             {/* Email */}
             <FormInput
               id="email"
-              name="email"
               type="email"
               label="Email"
               icon={Mail}
               autoComplete="email"
               placeholder="you@example.com"
-              error={state?.errors?.email?.[0]}
-            />
-
-            {/* Username */}
-            <FormInput
-              id="username"
-              name="username"
-              type="text"
-              label="Username"
-              icon={User}
-              autoComplete="username"
-              placeholder="zephyrus"
-              error={state?.errors?.username?.[0]}
+              error={errors.email?.message ?? state?.errors?.email?.[0]}
+              {...register("email")}
             />
 
             {/* Password */}
             <FormInput
               id="password"
-              name="password"
               type="password"
               label="Password"
               icon={Lock}
-              autoComplete="new-password"
+              autoComplete="current-password"
               placeholder="••••••••"
-              error={state?.errors?.password?.[0]}
+              error={errors.password?.message ?? state?.errors?.password?.[0]}
+              {...register("password")}
             />
 
             {/* Submit */}
@@ -75,20 +84,20 @@ export const RegisterForm = () => {
               {pending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <UserPlus className="h-4 w-4" />
+                <LogIn className="h-4 w-4" />
               )}
-              {pending ? "Creating account..." : "Sign Up"}
+              {pending ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Already have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
-                href={NAVIGATION_LINKS.login}
+                href="/register"
                 className="font-medium text-indigo-500 transition-colors hover:text-indigo-400"
               >
-                Sign in
+                Sign up
               </Link>
             </p>
           </div>
