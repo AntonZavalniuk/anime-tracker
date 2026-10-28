@@ -1,7 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState } from "react";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
 import {
   ArrowLeft,
   User,
@@ -15,6 +18,13 @@ import type { AuthFormState } from "@/actions/auth";
 import { FormInput } from "@/components/form-input";
 import { NAVIGATION_LINKS } from "@/constants";
 import type { SessionUser } from "@/lib/dal";
+import {
+  UpdateUsernameSchema,
+  UpdatePasswordSchema,
+} from "@/validation-schemas/auth";
+
+type UpdateUsernameFormValues = z.infer<typeof UpdateUsernameSchema>;
+type UpdatePasswordFormValues = z.infer<typeof UpdatePasswordSchema>;
 
 type UserSettingsProps = {
   user: SessionUser;
@@ -40,6 +50,30 @@ export const UserSettings = ({ user }: UserSettingsProps) => {
     AuthFormState,
     FormData
   >(updatePassword, undefined);
+
+  const usernameForm = useForm<UpdateUsernameFormValues>({
+    resolver: zodResolver(UpdateUsernameSchema),
+    defaultValues: { username: user.username },
+  });
+
+  const onUsernameSubmit = usernameForm.handleSubmit((data) => {
+    const formData = new FormData();
+    formData.append("username", data.username);
+    startTransition(() => usernameAction(formData));
+  });
+
+  const passwordForm = useForm<UpdatePasswordFormValues>({
+    resolver: zodResolver(UpdatePasswordSchema),
+    defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
+  });
+
+  const onPasswordSubmit = passwordForm.handleSubmit((data) => {
+    const formData = new FormData();
+    formData.append("currentPassword", data.currentPassword);
+    formData.append("newPassword", data.newPassword);
+    formData.append("confirmPassword", data.confirmPassword);
+    startTransition(() => passwordAction(formData));
+  });
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:px-8">
@@ -73,16 +107,18 @@ export const UserSettings = ({ user }: UserSettingsProps) => {
             </div>
           </div>
 
-          <form action={usernameAction} className="space-y-4">
+          <form onSubmit={onUsernameSubmit} className="space-y-4" noValidate>
             <FormInput
               id="username"
-              name="username"
               type="text"
               label="New username"
               icon={User}
-              defaultValue={user.username}
               placeholder={user.username}
-              error={usernameState?.errors?.username?.[0]}
+              error={
+                usernameForm.formState.errors.username?.message ??
+                usernameState?.errors?.username?.[0]
+              }
+              {...usernameForm.register("username")}
             />
 
             {usernameState?.message?.startsWith("✅") ? (
@@ -124,38 +160,47 @@ export const UserSettings = ({ user }: UserSettingsProps) => {
             </div>
           </div>
 
-          <form action={passwordAction} className="space-y-4">
+          <form onSubmit={onPasswordSubmit} className="space-y-4" noValidate>
             <FormInput
               id="currentPassword"
-              name="currentPassword"
               type="password"
               label="Current password"
               icon={Lock}
               autoComplete="current-password"
               placeholder="••••••••"
-              error={passwordState?.errors?.currentPassword?.[0]}
+              error={
+                passwordForm.formState.errors.currentPassword?.message ??
+                passwordState?.errors?.currentPassword?.[0]
+              }
+              {...passwordForm.register("currentPassword")}
             />
 
             <FormInput
               id="newPassword"
-              name="newPassword"
               type="password"
               label="New password"
               icon={Lock}
               autoComplete="new-password"
               placeholder="••••••••"
-              error={passwordState?.errors?.newPassword?.[0]}
+              error={
+                passwordForm.formState.errors.newPassword?.message ??
+                passwordState?.errors?.newPassword?.[0]
+              }
+              {...passwordForm.register("newPassword")}
             />
 
             <FormInput
               id="confirmPassword"
-              name="confirmPassword"
               type="password"
               label="Confirm new password"
               icon={Lock}
               autoComplete="new-password"
               placeholder="••••••••"
-              error={passwordState?.errors?.confirmPassword?.[0]}
+              error={
+                passwordForm.formState.errors.confirmPassword?.message ??
+                passwordState?.errors?.confirmPassword?.[0]
+              }
+              {...passwordForm.register("confirmPassword")}
             />
 
             {passwordState?.message?.startsWith("✅") ? (
