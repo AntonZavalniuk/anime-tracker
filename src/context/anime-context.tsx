@@ -28,6 +28,7 @@ import {
 } from "@/actions/anime";
 import type { ViewMode } from "@/actions/table-settings";
 import { updateTableSettings } from "@/actions/table-settings";
+import { toast } from "@/lib/toast";
 
 export type StatusFilter = AnimeStatus | "ALL";
 
@@ -329,14 +330,28 @@ export const AnimeProvider = ({
         setOptimisticItems({ type: "ADD", payload: optimisticItem });
         setOptimisticCounts({ type: "ADD", payload: optimisticItem });
 
-        const created = await addNewAnime(input);
-        if (created) {
-          setItems((prev) => [created, ...prev.filter((i) => i.id !== tempId)]);
-          setCounts((prev) => ({
-            ...prev,
-            ALL: prev.ALL + 1,
-            [input.status]: prev[input.status] + 1,
-          }));
+        try {
+          const created = await addNewAnime(input);
+          if (created) {
+            setItems((prev) => [
+              created,
+              ...prev.filter((i) => i.id !== tempId),
+            ]);
+            setCounts((prev) => ({
+              ...prev,
+              ALL: prev.ALL + 1,
+              [input.status]: prev[input.status] + 1,
+            }));
+            toast.success(
+              "Anime added",
+              `"${created.title}" has been added to your list.`,
+            );
+          }
+        } catch (err) {
+          toast.error(
+            "Failed to add anime",
+            err instanceof Error ? err.message : "Something went wrong. Please try again.",
+          );
         }
       });
     },

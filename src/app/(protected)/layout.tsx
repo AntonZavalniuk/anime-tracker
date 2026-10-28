@@ -5,6 +5,7 @@ import { getTableSettings } from "@/actions/table-settings";
 import { AnimeProvider } from "@/context/anime-context";
 import { Navbar, NavbarFallback } from "@/components/navbar";
 import { ScrollToTopButton } from "@/components/scroll-to-top-button";
+import { Toaster } from "@/components/ui/toast";
 
 const ProtectedLayoutContent = async ({
   children,
@@ -46,6 +47,7 @@ export default function ProtectedLayout({
         <ProtectedLayoutContent>{children}</ProtectedLayoutContent>
       </Suspense>
       <ScrollToTopButton />
+      <Toaster />
     </div>
   );
 }
