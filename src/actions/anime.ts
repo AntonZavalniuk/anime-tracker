@@ -228,7 +228,12 @@ export const deleteAnime = async (id: string) => {
   }
 
   revalidatePath("/");
-  return { id: anime.id, success: true };
+  return {
+    id: anime.id,
+    title: anime.title,
+    status: anime.status,
+    success: true,
+  };
 };
 
 export const updateAnimeEpisode = async (id: string, newEpisode: number) => {
@@ -246,7 +251,7 @@ export const updateAnimeEpisode = async (id: string, newEpisode: number) => {
   }
 
   revalidatePath("/");
-  return { id: updated.id, episode: updated.episode };
+  return { id: updated.id, episode: updated.episode, title: updated.title };
 };
 
 export const exportAnimeList = async (): Promise<ImportAnimeInput[]> => {

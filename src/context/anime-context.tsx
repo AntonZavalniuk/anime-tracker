@@ -350,7 +350,9 @@ export const AnimeProvider = ({
         } catch (err) {
           toast.error(
             "Failed to add anime",
-            err instanceof Error ? err.message : "Something went wrong. Please try again.",
+            err instanceof Error
+              ? err.message
+              : "Something went wrong. Please try again.",
           );
         }
       });
@@ -376,9 +378,22 @@ export const AnimeProvider = ({
         setOptimisticItems({ type: "UPDATE", payload: optimisticItem });
         setOptimisticCounts({ type: "UPDATE", payload: optimisticItem });
 
-        const updated = await updateAnime(id, input);
-        if (updated) {
-          setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
+        try {
+          const updated = await updateAnime(id, input);
+          if (updated) {
+            setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
+            toast.success(
+              "Anime updated",
+              `"${updated.title}" has been updated in your list.`,
+            );
+          }
+        } catch (err) {
+          toast.error(
+            "Failed to update anime",
+            err instanceof Error
+              ? err.message
+              : "Something went wrong. Please try again.",
+          );
         }
       });
     },
@@ -388,24 +403,37 @@ export const AnimeProvider = ({
   // Action: Delete Anime
   const handleDeleteAnime = useCallback(
     async (id: string) => {
-      const target = items.find((i) => i.id === id);
+      // const target = items.find((i) => i.id === id);
 
       startActionTransition(async () => {
         setOptimisticItems({ type: "DELETE", payload: { id } });
         setOptimisticCounts({ type: "DELETE", payload: { id } });
 
-        await deleteAnime(id);
-        setItems((prev) => prev.filter((i) => i.id !== id));
-        if (target) {
-          setCounts((prev) => ({
-            ...prev,
-            ALL: Math.max(0, prev.ALL - 1),
-            [target.status]: Math.max(0, prev[target.status] - 1),
-          }));
+        try {
+          const deleted = await deleteAnime(id);
+          if (deleted) {
+            setItems((prev) => prev.filter((i) => i.id !== id));
+            setCounts((prev) => ({
+              ...prev,
+              ALL: Math.max(0, prev.ALL - 1),
+              [deleted.status]: Math.max(0, prev[deleted.status] - 1),
+            }));
+            toast.success(
+              "Anime deleted",
+              `"${deleted.title}" has been deleted from your list.`,
+            );
+          }
+        } catch (err) {
+          toast.error(
+            "Failed to delete anime",
+            err instanceof Error
+              ? err.message
+              : "Something went wrong. Please try again.",
+          );
         }
       });
     },
-    [items, setOptimisticItems, setOptimisticCounts],
+    [setOptimisticItems, setOptimisticCounts],
   );
 
   // Action: Update Episode
@@ -417,10 +445,23 @@ export const AnimeProvider = ({
           payload: { id, episode },
         });
 
-        await updateAnimeEpisode(id, episode);
-        setItems((prev) =>
-          prev.map((i) => (i.id === id ? { ...i, episode } : i)),
-        );
+        try {
+          const updated = await updateAnimeEpisode(id, episode);
+          setItems((prev) =>
+            prev.map((i) => (i.id === id ? { ...i, episode } : i)),
+          );
+          toast.success(
+            "Anime episode updated",
+            `Current episode of "${updated.title}" has been updated.`,
+          );
+        } catch (err) {
+          toast.error(
+            "Failed to update anime episode",
+            err instanceof Error
+              ? err.message
+              : "Something went wrong. Please try again.",
+          );
+        }
       });
     },
     [setOptimisticItems],
