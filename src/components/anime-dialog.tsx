@@ -2,13 +2,19 @@
 
 import { useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
-import { X, Loader2, Sparkles, Film } from "lucide-react";
+import { X, Loader2, Sparkles, Film, Search, Image as ImageIcon } from "lucide-react";
 import { useAnime } from "@/context/anime-context";
 import type {
   AnimeStatus,
   FilterableAnime,
   UpdateAnimeInput,
 } from "@/actions/anime";
+import {
+  findShikimoriPosterMatch,
+  type ShikimoriSearchResult,
+} from "@/actions/shikimori";
+import { ShikimoriSearchCombobox } from "@/components/shikimori-search-combobox";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 type AnimeDialogProps = {
@@ -43,6 +49,48 @@ const AnimeDialogForm = ({ anime, onClose }: AnimeDialogFormProps) => {
   const [status, setStatus] = useState<AnimeStatus>(anime?.status ?? "AIRING");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [showShikimoriSearch, setShowShikimoriSearch] = useState(false);
+  const [isFindingPoster, setIsFindingPoster] = useState(false);
+
+  const handleShikimoriSelect = (result: ShikimoriSearchResult) => {
+    setTitle(result.title);
+    setOriginalTitle(result.originalTitle);
+    if (result.posterUrl) setPosterUrl(result.posterUrl);
+    setSeason(result.seasonOrdinal);
+    if (result.episodes > 0) setEpisodes(result.episodes);
+    setShowShikimoriSearch(false);
+  };
+
+  const handleFindPoster = async () => {
+    if (!title.trim()) return;
+
+    setIsFindingPoster(true);
+    try {
+      const match = await findShikimoriPosterMatch(
+        title.trim(),
+        Math.max(1, Number(season) || 1),
+      );
+      if (match?.posterUrl) {
+        setPosterUrl(match.posterUrl);
+        toast.success(
+          "Poster found",
+          `Matched "${match.title}" on Shikimori.`,
+        );
+      } else {
+        toast.error(
+          "No match found",
+          "Couldn't find this anime on Shikimori.",
+        );
+      }
+    } catch (err) {
+      toast.error(
+        "Shikimori search failed",
+        err instanceof Error ? err.message : "Please try again.",
+      );
+    } finally {
+      setIsFindingPoster(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,21 +136,41 @@ const AnimeDialogForm = ({ anime, onClose }: AnimeDialogFormProps) => {
 
       {/* Title */}
       <div className="space-y-1.5">
-        <label
-          htmlFor="anime-title"
-          className="text-xs font-medium text-muted-foreground"
-        >
-          Title <span className="text-destructive">*</span>
-        </label>
-        <input
-          id="anime-title"
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Безупречный мир / Perfect World"
-          className="w-full rounded-xl border border-border/60 bg-background/50 px-3.5 py-2 text-sm text-foreground transition-all outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-          required
-        />
+        <div className="flex items-center justify-between">
+          <label
+            htmlFor="anime-title"
+            className="text-xs font-medium text-muted-foreground"
+          >
+            Title <span className="text-destructive">*</span>
+          </label>
+          {!isEditing && (
+            <button
+              type="button"
+              onClick={() => setShowShikimoriSearch((v) => !v)}
+              className="flex items-center gap-1 text-[11px] font-medium text-indigo-500 transition-colors hover:text-indigo-400"
+            >
+              <Search className="h-3 w-3" />
+              Auto-search Shikimori
+            </button>
+          )}
+        </div>
+        {showShikimoriSearch ? (
+          <ShikimoriSearchCombobox
+            autoFocus
+            placeholder="e.g. Attack on Titan"
+            onSelect={handleShikimoriSelect}
+          />
+        ) : (
+          <input
+            id="anime-title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Безупречный мир / Perfect World"
+            className="w-full rounded-xl border border-border/60 bg-background/50 px-3.5 py-2 text-sm text-foreground transition-all outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+            required
+          />
+        )}
       </div>
 
       {/* Original Title */}
@@ -123,22 +191,77 @@ const AnimeDialogForm = ({ anime, onClose }: AnimeDialogFormProps) => {
         />
       </div>
 
-      {/* Poster URL */}
+      {/* Poster Image */}
       <div className="space-y-1.5">
-        <label
-          htmlFor="anime-poster-url"
-          className="text-xs font-medium text-muted-foreground"
-        >
-          Poster URL
-        </label>
-        <input
-          id="anime-poster-url"
-          type="url"
-          value={posterUrl}
-          onChange={(e) => setPosterUrl(e.target.value)}
-          placeholder="https://example.com/poster.jpg"
-          className="w-full rounded-xl border border-border/60 bg-background/50 px-3.5 py-2 text-sm text-foreground transition-all outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-        />
+        <div className="flex items-center justify-between">
+          <label
+            htmlFor="anime-poster-url"
+            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+          >
+            <ImageIcon className="h-3.5 w-3.5" />
+            Poster Image
+          </label>
+          {isEditing && (
+            <button
+              type="button"
+              onClick={handleFindPoster}
+              disabled={isFindingPoster || !title.trim()}
+              className="flex items-center gap-1 text-[11px] font-medium text-indigo-500 transition-colors hover:text-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isFindingPoster ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Sparkles className="h-3 w-3" />
+              )}
+              Find on Shikimori
+            </button>
+          )}
+        </div>
+
+        <div className="relative">
+          <input
+            id="anime-poster-url"
+            type="url"
+            value={posterUrl}
+            onChange={(e) => setPosterUrl(e.target.value)}
+            placeholder="https://example.com/poster.jpg"
+            className="w-full rounded-xl border border-border/60 bg-background/50 px-3.5 py-2 pr-8 text-sm text-foreground transition-all outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+          />
+          {posterUrl && (
+            <button
+              type="button"
+              onClick={() => setPosterUrl("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        {posterUrl.trim() && (
+          <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/30 p-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={posterUrl}
+              alt=""
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+              className="h-14 w-10 shrink-0 rounded-lg border border-border/60 bg-muted object-cover"
+            />
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <p className="text-xs font-medium text-foreground">
+                Poster preview attached
+              </p>
+              <p
+                className="truncate text-[11px] text-muted-foreground"
+                title={posterUrl}
+              >
+                {posterUrl}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Season, Episode, Episodes */}

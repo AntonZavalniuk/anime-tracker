@@ -1,8 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
-import { X, Settings, LayoutGrid, LayoutList } from "lucide-react";
+import {
+  X,
+  Settings,
+  LayoutGrid,
+  LayoutList,
+  Sparkles,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { useAnime } from "@/context/anime-context";
+import { syncAllPosters, type SyncPostersResult } from "@/actions/shikimori";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 type TableSettingsDialogProps = {
@@ -21,7 +33,37 @@ export const TableSettingsDialog = ({
     setShowPosterInTableRow,
     viewMode,
     setViewMode,
+    refreshList,
   } = useAnime();
+
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<SyncPostersResult | null>(null);
+
+  const handleSyncAll = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    try {
+      const result = await syncAllPosters();
+      setSyncResult(result);
+      await refreshList();
+      toast.success(
+        "Poster sync complete",
+        `Synced ${result.synced} poster${result.synced === 1 ? "" : "s"}.`,
+      );
+    } catch (err) {
+      toast.error(
+        "Sync failed",
+        err instanceof Error ? err.message : "Please try again.",
+      );
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    onClose();
+    setSyncResult(null);
+  };
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -38,7 +80,7 @@ export const TableSettingsDialog = ({
               </Dialog.Title>
             </div>
             <Dialog.Close
-              onClick={onClose}
+              onClick={handleCloseDialog}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <X className="h-4 w-4" />
@@ -141,12 +183,68 @@ export const TableSettingsDialog = ({
                 </button>
               </div>
             </div>
+
+            {/* Auto-Sync Posters */}
+            <div className="rounded-xl border border-border/60 bg-background/40 p-3.5 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
+                <p className="text-xs font-semibold text-foreground">
+                  Auto-Sync Posters
+                </p>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Search Shikimori &amp; attach official posters to all existing
+                anime without covers
+              </p>
+
+              {syncResult && (
+                <div
+                  className={cn(
+                    "flex items-start gap-2 rounded-lg border p-2.5 text-[11px] font-medium",
+                    syncResult.failed > 0
+                      ? "border-destructive/20 bg-destructive/10 text-destructive"
+                      : "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                  )}
+                >
+                  {syncResult.failed > 0 ? (
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  )}
+                  <span>
+                    Synced {syncResult.synced} poster
+                    {syncResult.synced === 1 ? "" : "s"}.
+                    {syncResult.notFound > 0 &&
+                      ` Not found: ${syncResult.notFound}.`}
+                    {syncResult.failed > 0 && ` Errors: ${syncResult.failed}.`}
+                    {syncResult.remaining > 0 &&
+                      ` ${syncResult.remaining} remaining — click Sync All again.`}
+                  </span>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleSyncAll}
+                disabled={isSyncing}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-600 to-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-indigo-500/20 transition-all hover:from-indigo-500 hover:to-purple-500 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isSyncing ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
+                {isSyncing ? "Syncing..." : "Sync All"}
+              </button>
+            </div>
           </div>
 
           <div className="mt-6 flex justify-end">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleCloseDialog}
               className="rounded-xl bg-linear-to-r from-indigo-600 to-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-indigo-500/20 transition-all hover:from-indigo-500 hover:to-purple-500 active:scale-95 cursor-pointer"
             >
               Done
