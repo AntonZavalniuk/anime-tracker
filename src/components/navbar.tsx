@@ -22,9 +22,11 @@ export const Navbar = async () => {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="bg-linear-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-lg font-bold tracking-tight text-transparent sm:text-xl">
-                AniTracker
-              </h1>
+              <Link href={NAVIGATION_LINKS.home}>
+                <h1 className="bg-linear-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-lg font-bold tracking-tight text-transparent sm:text-xl">
+                  AniTracker
+                </h1>
+              </Link>
               <AnimeCountBadge />
             </div>
             <p className="hidden text-xs text-muted-foreground sm:block">
