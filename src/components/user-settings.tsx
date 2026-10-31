@@ -1,22 +1,13 @@
 "use client";
 
 import { startTransition, useActionState } from "react";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import {
-  ArrowLeft,
-  User,
-  Lock,
-  Save,
-  Loader2,
-  CheckCircle2,
-} from "lucide-react";
+import { User, Lock, Save, Loader2, CheckCircle2 } from "lucide-react";
 import { updateUsername, updatePassword } from "@/actions/auth";
 import type { AuthFormState } from "@/actions/auth";
 import { FormInput } from "@/components/form-input";
-import { NAVIGATION_LINKS } from "@/constants";
 import type { SessionUser } from "@/lib/dal";
 import {
   UpdateUsernameSchema,
@@ -64,7 +55,11 @@ export const UserSettings = ({ user }: UserSettingsProps) => {
 
   const passwordForm = useForm<UpdatePasswordFormValues>({
     resolver: zodResolver(UpdatePasswordSchema),
-    defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
   });
 
   const onPasswordSubmit = passwordForm.handleSubmit((data) => {
@@ -77,34 +72,24 @@ export const UserSettings = ({ user }: UserSettingsProps) => {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:px-8">
-      {/* Back link */}
-      <Link
-        href={NAVIGATION_LINKS.home}
-        className="group mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-        Back to list
-      </Link>
-
-      <h1 className="mb-2 text-3xl font-bold tracking-tight">Settings</h1>
-      <p className="mb-8 text-sm text-muted-foreground">
-        Manage profile:{" "}
-        <span className="font-medium text-foreground">{user.email}</span>
-      </p>
-
       <div className="space-y-6">
         {/* ── Username ── */}
         <div className="rounded-2xl border border-border/50 bg-card/40 p-6 shadow-xl shadow-black/5 backdrop-blur-xl">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 ring-1 ring-indigo-500/20">
-              <User className="h-4 w-4 text-indigo-500" />
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 ring-1 ring-indigo-500/20">
+                <User className="h-4 w-4 text-indigo-500" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">Username</h2>
+                <p className="text-xs text-muted-foreground">
+                  Current: @{user.username}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-semibold">Username</h2>
-              <p className="text-xs text-muted-foreground">
-                Current: @{user.username}
-              </p>
-            </div>
+            <span className="text-xs font-medium text-muted-foreground">
+              {user.email}
+            </span>
           </div>
 
           <form onSubmit={onUsernameSubmit} className="space-y-4" noValidate>
