@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Tv, Sparkles } from "lucide-react";
+import Image from "next/image";
 import { NAVIGATION_LINKS } from "@/constants";
 import { getCurrentUser } from "@/lib/dal";
 import { ThemeToggle } from "./theme-toggle";
@@ -15,10 +15,16 @@ export const Navbar = async () => {
         <div className="flex items-center gap-3">
           <Link
             href={NAVIGATION_LINKS.home}
-            className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white shadow-md ring-1 shadow-indigo-500/20 ring-white/20"
+            className="flex h-10 w-10 items-center justify-center"
           >
-            <Tv className="h-5 w-5" />
-            <Sparkles className="absolute -top-1 -right-1 h-3 w-3 animate-pulse text-yellow-300" />
+            <Image
+              src="/logo.svg"
+              alt="AniTracker logo"
+              width={40}
+              height={40}
+              preload
+              className="h-10 w-10"
+            />
           </Link>
           <div>
             <div className="flex items-center gap-2">

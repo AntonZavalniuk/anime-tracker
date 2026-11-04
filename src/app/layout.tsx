@@ -16,6 +16,7 @@ const fontMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AniTracker",
   description: "Track and organize the anime you're watching.",
+  icons: { icon: "./logo.svg" },
 };
 
 export default function RootLayout({
