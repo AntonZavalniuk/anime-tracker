@@ -66,27 +66,26 @@ const AnimeDialogForm = ({ anime, onClose }: AnimeDialogFormProps) => {
 
     setIsFindingPoster(true);
     try {
-      const match = await findShikimoriPosterMatch(
-        title.trim(),
-        Math.max(1, Number(season) || 1),
+      const match = await toast.promise(
+        findShikimoriPosterMatch(
+          title.trim(),
+          Math.max(1, Number(season) || 1),
+        ),
+        {
+          loading: "Searching poster on Shikimori...",
+          success: (m) =>
+            m?.posterUrl
+              ? `Matched "${m.title}" on Shikimori.`
+              : "Couldn't find this anime on Shikimori.",
+          error: (err) =>
+            err instanceof Error ? err.message : "Shikimori search failed.",
+        },
       );
       if (match?.posterUrl) {
         setPosterUrl(match.posterUrl);
-        toast.success(
-          "Poster found",
-          `Matched "${match.title}" on Shikimori.`,
-        );
-      } else {
-        toast.error(
-          "No match found",
-          "Couldn't find this anime on Shikimori.",
-        );
       }
-    } catch (err) {
-      toast.error(
-        "Shikimori search failed",
-        err instanceof Error ? err.message : "Please try again.",
-      );
+    } catch {
+      // Handled by toast.promise
     } finally {
       setIsFindingPoster(false);
     }
