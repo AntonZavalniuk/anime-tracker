@@ -43,18 +43,22 @@ export const TableSettingsDialog = ({
     setIsSyncing(true);
     setSyncResult(null);
     try {
-      const result = await syncAllPosters();
+      const result = await toast.promise(
+        syncAllPosters().then(async (res) => {
+          await refreshList();
+          return res;
+        }),
+        {
+          loading: "Syncing posters with Shikimori...",
+          success: (res) =>
+            `Synced ${res.synced} poster${res.synced === 1 ? "" : "s"}.`,
+          error: (err) =>
+            err instanceof Error ? err.message : "Failed to sync posters.",
+        },
+      );
       setSyncResult(result);
-      await refreshList();
-      toast.success(
-        "Poster sync complete",
-        `Synced ${result.synced} poster${result.synced === 1 ? "" : "s"}.`,
-      );
-    } catch (err) {
-      toast.error(
-        "Sync failed",
-        err instanceof Error ? err.message : "Please try again.",
-      );
+    } catch {
+      // Handled by toast.promise
     } finally {
       setIsSyncing(false);
     }
