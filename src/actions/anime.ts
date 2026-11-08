@@ -57,6 +57,7 @@ export type AnimeBatchResult = {
 };
 
 export type UpdateAnimeInput = {
+  id?: string;
   title: string;
   originalTitle: string | null;
   posterUrl?: string | null;
@@ -170,9 +171,10 @@ export const addNewAnime = async (
 ): Promise<FilterableAnime> => {
   const { userId } = await verifySession();
 
+  const { id: customId, ...fields } = data;
   const anime = await db.orm.public.Anime.create({
-    ...data,
-    id: createId(),
+    ...fields,
+    id: customId || createId(),
     userId,
     updatedAt: Temporal.Now.plainDateTimeISO(),
   });
@@ -197,7 +199,13 @@ export const updateAnime = async (
   const { userId } = await verifySession();
 
   const anime = await db.orm.public.Anime.where({ id, userId }).update({
-    ...data,
+    title: data.title,
+    originalTitle: data.originalTitle,
+    posterUrl: data.posterUrl,
+    season: data.season,
+    episode: data.episode,
+    episodes: data.episodes,
+    status: data.status,
     updatedAt: Temporal.Now.plainDateTimeISO(),
   });
 

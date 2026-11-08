@@ -11,6 +11,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import { createId } from "@paralleldrive/cuid2";
 import type {
   AnimeStatus,
   FilterableAnime,
@@ -122,14 +123,25 @@ export const AnimeProvider = ({
     items,
     (currentItems, action: OptimisticAction) => {
       switch (action.type) {
-        case "ADD":
+        case "ADD": {
+          if (status !== "ALL" && action.payload.status !== status) {
+            return currentItems;
+          }
+          if (currentItems.some((item) => item.id === action.payload.id)) {
+            return currentItems;
+          }
           return [action.payload, ...currentItems];
-        case "UPDATE":
+        }
+        case "UPDATE": {
+          if (status !== "ALL" && action.payload.status !== status) {
+            return currentItems.filter((item) => item.id !== action.payload.id);
+          }
           return currentItems.map((item) =>
             item.id === action.payload.id
               ? { ...item, ...action.payload }
               : item,
           );
+        }
         case "DELETE":
           return currentItems.filter((item) => item.id !== action.payload.id);
         case "UPDATE_EPISODE":
@@ -150,6 +162,9 @@ export const AnimeProvider = ({
     (currentCounts, action: OptimisticAction) => {
       switch (action.type) {
         case "ADD": {
+          if (items.some((item) => item.id === action.payload.id)) {
+            return currentCounts;
+          }
           const s = action.payload.status;
           return {
             ...currentCounts,
@@ -160,10 +175,7 @@ export const AnimeProvider = ({
         case "DELETE": {
           const item = items.find((i) => i.id === action.payload.id);
           if (!item) {
-            return {
-              ...currentCounts,
-              ALL: Math.max(0, currentCounts.ALL - 1),
-            };
+            return currentCounts;
           }
           return {
             ...currentCounts,
@@ -314,9 +326,9 @@ export const AnimeProvider = ({
   // Action: Add Anime
   const handleAddAnime = useCallback(
     async (input: UpdateAnimeInput) => {
-      const tempId = `temp-${Date.now()}`;
+      const newId = input.id || createId();
       const optimisticItem: FilterableAnime = {
-        id: tempId,
+        id: newId,
         title: input.title,
         originalTitle: input.originalTitle,
         season: input.season,
@@ -331,16 +343,18 @@ export const AnimeProvider = ({
         setOptimisticCounts({ type: "ADD", payload: optimisticItem });
 
         try {
-          const created = await addNewAnime(input);
+          const created = await addNewAnime({ ...input, id: newId });
           if (created) {
-            setItems((prev) => [
-              created,
-              ...prev.filter((i) => i.id !== tempId),
-            ]);
+            setItems((prev) => {
+              if (status !== "ALL" && created.status !== status) {
+                return prev.filter((i) => i.id !== newId);
+              }
+              return [created, ...prev.filter((i) => i.id !== newId)];
+            });
             setCounts((prev) => ({
               ...prev,
               ALL: prev.ALL + 1,
-              [input.status]: prev[input.status] + 1,
+              [created.status]: prev[created.status] + 1,
             }));
             toast.success(
               "Anime added",
@@ -357,7 +371,7 @@ export const AnimeProvider = ({
         }
       });
     },
-    [setOptimisticItems, setOptimisticCounts],
+    [status, setOptimisticItems, setOptimisticCounts],
   );
 
   // Action: Update Anime
@@ -374,6 +388,8 @@ export const AnimeProvider = ({
         posterUrl: input.posterUrl ?? null,
       };
 
+      const prevItem = items.find((i) => i.id === id);
+
       startActionTransition(async () => {
         setOptimisticItems({ type: "UPDATE", payload: optimisticItem });
         setOptimisticCounts({ type: "UPDATE", payload: optimisticItem });
@@ -381,7 +397,21 @@ export const AnimeProvider = ({
         try {
           const updated = await updateAnime(id, input);
           if (updated) {
-            setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
+            setItems((prev) => {
+              if (status !== "ALL" && updated.status !== status) {
+                return prev.filter((i) => i.id !== id);
+              }
+              return prev.map((i) => (i.id === id ? updated : i));
+            });
+
+            if (prevItem && prevItem.status !== updated.status) {
+              setCounts((prev) => ({
+                ...prev,
+                [prevItem.status]: Math.max(0, prev[prevItem.status] - 1),
+                [updated.status]: prev[updated.status] + 1,
+              }));
+            }
+
             toast.success(
               "Anime updated",
               `"${updated.title}" has been updated in your list.`,
@@ -397,7 +427,7 @@ export const AnimeProvider = ({
         }
       });
     },
-    [setOptimisticItems, setOptimisticCounts],
+    [items, status, setOptimisticItems, setOptimisticCounts],
   );
 
   // Action: Delete Anime
