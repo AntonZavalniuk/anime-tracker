@@ -211,6 +211,20 @@ export const AnimeProvider = ({
   // Track initial render to skip re-fetching what was already provided via initialBatch
   const isFirstMount = useRef(true);
 
+  // Refs for debouncing episode updates per anime
+  const episodeDebounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const latestEpisodeRef = useRef<Map<string, number>>(new Map());
+  const originalEpisodesRef = useRef<Map<string, number>>(new Map());
+
+  // Cleanup pending episode debounce timers on unmount
+  useEffect(() => {
+    const timers = episodeDebounceTimers.current;
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
+
   // Refetch batch when status or debounced query changes
   useEffect(() => {
     if (isFirstMount.current) {
@@ -377,6 +391,13 @@ export const AnimeProvider = ({
   // Action: Update Anime
   const handleUpdateAnime = useCallback(
     async (id: string, input: UpdateAnimeInput) => {
+      const pendingTimer = episodeDebounceTimers.current.get(id);
+      if (pendingTimer) {
+        clearTimeout(pendingTimer);
+        episodeDebounceTimers.current.delete(id);
+        latestEpisodeRef.current.delete(id);
+        originalEpisodesRef.current.delete(id);
+      }
       const optimisticItem: FilterableAnime = {
         id,
         title: input.title,
@@ -433,6 +454,13 @@ export const AnimeProvider = ({
   // Action: Delete Anime
   const handleDeleteAnime = useCallback(
     async (id: string) => {
+      const pendingTimer = episodeDebounceTimers.current.get(id);
+      if (pendingTimer) {
+        clearTimeout(pendingTimer);
+        episodeDebounceTimers.current.delete(id);
+        latestEpisodeRef.current.delete(id);
+        originalEpisodesRef.current.delete(id);
+      }
       // const target = items.find((i) => i.id === id);
 
       startActionTransition(async () => {
@@ -466,35 +494,80 @@ export const AnimeProvider = ({
     [setOptimisticItems, setOptimisticCounts],
   );
 
-  // Action: Update Episode
+  // Action: Update Episode with Debounce
   const handleUpdateEpisode = useCallback(
-    async (id: string, episode: number) => {
-      startActionTransition(async () => {
-        setOptimisticItems({
-          type: "UPDATE_EPISODE",
-          payload: { id, episode },
-        });
-
-        try {
-          const updated = await updateAnimeEpisode(id, episode);
-          setItems((prev) =>
-            prev.map((i) => (i.id === id ? { ...i, episode } : i)),
-          );
-          toast.success(
-            "Anime episode updated",
-            `Current episode of "${updated.title}" has been updated.`,
-          );
-        } catch (err) {
-          toast.error(
-            "Failed to update anime episode",
-            err instanceof Error
-              ? err.message
-              : "Something went wrong. Please try again.",
-          );
+    async (id: string, newEpisode: number) => {
+      // 1. Remember original episode for rollback on failure
+      if (!originalEpisodesRef.current.has(id)) {
+        const currentItem = items.find((i) => i.id === id);
+        if (currentItem) {
+          originalEpisodesRef.current.set(id, currentItem.episode);
         }
-      });
+      }
+
+      // 2. Track latest requested episode
+      latestEpisodeRef.current.set(id, newEpisode);
+
+      // 3. Update local state immediately for instant responsive UI
+      setItems((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, episode: newEpisode } : i)),
+      );
+
+      // 4. Clear existing debounce timer for this anime
+      const existingTimer = episodeDebounceTimers.current.get(id);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+
+      // 5. Schedule backend update after user stops clicking
+      const timer = setTimeout(async () => {
+        episodeDebounceTimers.current.delete(id);
+        const targetEpisode = latestEpisodeRef.current.get(id);
+        if (targetEpisode === undefined) return;
+
+        // If returned to original episode, no backend update needed
+        const originalEpisode = originalEpisodesRef.current.get(id);
+        if (originalEpisode !== undefined && targetEpisode === originalEpisode) {
+          latestEpisodeRef.current.delete(id);
+          originalEpisodesRef.current.delete(id);
+          return;
+        }
+
+        startActionTransition(async () => {
+          try {
+            const updated = await updateAnimeEpisode(id, targetEpisode);
+            if (latestEpisodeRef.current.get(id) === targetEpisode) {
+              latestEpisodeRef.current.delete(id);
+              originalEpisodesRef.current.delete(id);
+            }
+            toast.success(
+              "Anime episode updated",
+              `Current episode of "${updated.title}" has been updated.`,
+            );
+          } catch (err) {
+            const rollbackEpisode = originalEpisodesRef.current.get(id);
+            if (rollbackEpisode !== undefined) {
+              setItems((prev) =>
+                prev.map((i) =>
+                  i.id === id ? { ...i, episode: rollbackEpisode } : i,
+                ),
+              );
+              originalEpisodesRef.current.delete(id);
+            }
+            latestEpisodeRef.current.delete(id);
+            toast.error(
+              "Failed to update anime episode",
+              err instanceof Error
+                ? err.message
+                : "Something went wrong. Please try again.",
+            );
+          }
+        });
+      }, 500);
+
+      episodeDebounceTimers.current.set(id, timer);
     },
-    [setOptimisticItems],
+    [items],
   );
 
   return (
