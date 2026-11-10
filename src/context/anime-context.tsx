@@ -216,6 +216,12 @@ export const AnimeProvider = ({
   const latestEpisodeRef = useRef<Map<string, number>>(new Map());
   const originalEpisodesRef = useRef<Map<string, number>>(new Map());
 
+  // Latest items for callbacks that must keep a stable identity
+  const itemsRef = useRef(items);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
   // Cleanup pending episode debounce timers on unmount
   useEffect(() => {
     const timers = episodeDebounceTimers.current;
@@ -499,7 +505,7 @@ export const AnimeProvider = ({
     async (id: string, newEpisode: number) => {
       // 1. Remember original episode for rollback on failure
       if (!originalEpisodesRef.current.has(id)) {
-        const currentItem = items.find((i) => i.id === id);
+        const currentItem = itemsRef.current.find((i) => i.id === id);
         if (currentItem) {
           originalEpisodesRef.current.set(id, currentItem.episode);
         }
@@ -567,7 +573,7 @@ export const AnimeProvider = ({
 
       episodeDebounceTimers.current.set(id, timer);
     },
-    [items],
+    [],
   );
 
   return (
