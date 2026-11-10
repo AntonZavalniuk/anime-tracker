@@ -127,16 +127,21 @@
   html {
     @apply font-sans;
   }
+  /* Tailwind v4 preflight resets buttons to the default cursor */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
 
 @keyframes anime-card-reveal {
   from {
     opacity: 0;
-    transform: translateY(20px) scale(0.98);
+    transform: scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: scale(1);
   }
 }
 
